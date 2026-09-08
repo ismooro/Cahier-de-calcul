@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cahier de calcul — Entraînement</title>
+<style>
+  :root{
+    --paper:#faf8f1;
+    --grid-line:#cfe0ea;
+    --grid-line-strong:#b9d3e2;
+    --ink:#1c2541;
+    --ink-mute:#5c6580;
+    --red:#b23a2e;
+    --red-soft:#e2c3bd;
+    --green:#2f6f4e;
+    --green-soft:#cfe3d5;
+    --gold:#a8791f;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --mono: "JetBrains Mono", "SF Mono", "Courier New", monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family: var(--serif);
+    color: var(--ink);
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 26px 26px;
+    min-height: 100vh;
+    position: relative;
+  }
+  body::before{
+    /* red margin line, classic French cahier */
+    content:"";
+    position: fixed;
+    top:0; bottom:0;
+    left: 64px;
+    width: 1px;
+    background: var(--red);
+    opacity: 0.35;
+    pointer-events: none;
+  }
+  .wrap{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 40px 28px 80px 96px;
+  }
+  @media (max-width: 640px){
+    body::before{ left: 30px; }
+    .wrap{ padding: 28px 16px 60px 46px; }
+  }
+
+  h1,h2,h3{ font-weight: 600; line-height:1.15; margin: 0; }
+  .masthead{ margin-bottom: 28px; }
+  .masthead h1{ font-size: 2rem; letter-spacing: 0.2px; }
+  .masthead p{ margin: 6px 0 0; color: var(--ink-mute); font-size: 0.98rem; max-width: 46ch; }
+
+  .checkbox-label{ display:inline-flex; gap:8px; align-items:baseline; }
+  .checkbox-label::before{ content:"□"; color: var(--ink-mute); }
+
+  .card{
+    background: rgba(255,255,255,0.62);
+    border: 1px solid var(--grid-line-strong);
+    padding: 24px;
+    margin-bottom: 22px;
+    position: relative;
+  }
+  .card + .card{ margin-top: 0; }
+
+  /* ---- Home: level / stats ---- */
+  .stat-row{ display:flex; flex-wrap:wrap; gap: 22px; align-items:flex-end; }
+  .stat-block .label{ font-size: 0.8rem; color: var(--ink-mute); }
+  .stat-block .value{ font-family: var(--mono); font-size: 1.5rem; font-weight:600; }
+  .level-bar-outer{
+    margin-top: 14px;
+    height: 8px;
+    background: var(--grid-line);
+    position: relative;
+  }
+  .level-bar-inner{
+    height: 100%;
+    background: var(--ink);
+    transition: width 0.5s ease;
+  }
+  .level-caption{ font-size: 0.8rem; color: var(--ink-mute); margin-top: 6px; }
+
+  button{
+    font-family: var(--serif);
+    cursor: pointer;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    color: var(--ink);
+    padding: 10px 18px;
+    font-size: 1rem;
+  }
+  button:hover{ background: var(--ink); color: var(--paper); }
+  button:disabled{ opacity: 0.45; cursor: default; }
+  button.primary{ background: var(--ink); color: var(--paper); }
+  button.primary:hover{ background: var(--red); border-color: var(--red); }
+  .btn-row{ display:flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+
+  table{ width:100%; border-collapse: collapse; font-size: 0.92rem; }
+  thead th{
+    text-align:left; font-weight:600; color: var(--ink-mute);
+    border-bottom: 1px solid var(--ink); padding: 6px 8px; font-size: 0.82rem;
+  }
+  tbody td{ padding: 7px 8px; border-bottom: 1px solid var(--grid-line-strong); font-family: var(--mono); }
+  tbody tr:last-child td{ border-bottom: none; }
+  tbody td.level-cell{ font-family: var(--serif); }
+
+  .bars{ display:flex; align-items:flex-end; gap: 6px; height: 60px; margin-top: 14px; }
+  .bars .bar{ flex:1; background: var(--grid-line-strong); position:relative; min-width: 4px; }
+  .bars .bar.best{ background: var(--gold); }
+  .bars .bar span{
+    position:absolute; bottom: 100%; left:50%; transform: translateX(-50%);
+    font-size: 0.62rem; color: var(--ink-mute); white-space:nowrap;
+  }
+
+  .empty-note{ color: var(--ink-mute); font-size: 0.95rem; }
+
+  /* ---- Quiz screen ---- */
+  .quiz-top{ display:flex; justify-content:space-between; align-items:center; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .quiz-meta{ font-family: var(--mono); font-size: 0.95rem; color: var(--ink-mute); }
+  .timer{ font-family: var(--mono); font-size: 1.6rem; font-weight:700; min-width: 3ch; text-align:right; }
+  .timer.warn{ color: var(--red); }
+
+  .progress-strip{ display:flex; gap: 2px; margin-bottom: 22px; flex-wrap: wrap; }
+  .progress-strip .cell{
+    width: 12px; height: 12px; border: 1px solid var(--grid-line-strong);
+    background: transparent;
+  }
+  .progress-strip .cell.current{ border-color: var(--ink); background: var(--paper); }
+  .progress-strip .cell.correct{ background: var(--green-soft); border-color: var(--green); }
+  .progress-strip .cell.wrong{ background: var(--red-soft); border-color: var(--red); }
+
+  .question-card{ padding: 30px 26px; }
+  .q-topic{ font-size: 0.82rem; color: var(--ink-mute); }
+  .q-clocks{ float:right; font-size: 0.82rem; color: var(--ink-mute); }
+  .q-prompt{ font-family: var(--mono); font-size: 1.35rem; margin: 18px 0 24px; line-height:1.5; clear:both; }
+
+  .options{ display:grid; gap: 10px; }
+  .option{
+    display:flex; gap: 10px; align-items:center;
+    text-align:left; padding: 12px 14px; font-family: var(--mono); font-size: 1rem;
+    border: 1px solid var(--grid-line-strong); background: transparent; color: var(--ink);
+  }
+  .option::before{ content:"□"; color: var(--ink-mute); flex-shrink:0; }
+  .option:hover:not(:disabled){ border-color: var(--ink); background: rgba(28,37,65,0.04); }
+  .option.selected-correct{ border-color: var(--green); background: var(--green-soft); }
+  .option.selected-correct::before{ content:"☑"; color: var(--green); }
+  .option.selected-wrong{ border-color: var(--red); background: var(--red-soft); }
+  .option.selected-wrong::before{ content:"☒"; color: var(--red); }
+  .option.reveal-correct{ border-color: var(--green); background: var(--green-soft); }
+  .option.reveal-correct::before{ content:"☑"; color: var(--green); }
+
+  .input-row{ display:flex; gap: 10px; flex-wrap: wrap; align-items:center; }
+  .input-row input[type=text]{
+    font-family: var(--mono); font-size: 1.1rem; padding: 10px 12px;
+    border: none; border-bottom: 2px solid var(--ink); background: transparent; color: var(--ink);
+    flex: 1; min-width: 180px;
+  }
+  .input-row input[type=text]:focus{ outline:none; border-bottom-color: var(--red); }
+  .input-hint{ font-size: 0.8rem; color: var(--ink-mute); margin-top: 6px; }
+
+  .feedback{ margin-top: 18px; padding: 12px 14px; border-left: 3px solid var(--ink); font-size: 0.95rem; }
+  .feedback.ok{ border-color: var(--green); background: var(--green-soft); }
+  .feedback.ko{ border-color: var(--red); background: var(--red-soft); }
+  .feedback .pts{ font-family: var(--mono); font-weight:700; }
+
+  /* ---- End screen ---- */
+  .score-hero{ text-align:center; padding: 34px 20px; }
+  .score-hero .big{ font-family: var(--mono); font-size: 3.2rem; font-weight:700; }
+  .score-hero .sub{ color: var(--ink-mute); margin-top: 4px; }
+  .levelup{
+    margin-top: 16px; display:inline-block; padding: 8px 16px;
+    border: 1px solid var(--gold); color: var(--gold); font-size: 0.95rem;
+    animation: levelup-pop 0.6s ease;
+  }
+  @keyframes levelup-pop{
+    0%{ transform: scale(0.85); opacity: 0; }
+    60%{ transform: scale(1.05); opacity: 1; }
+    100%{ transform: scale(1); }
+  }
+  .recap-grid{ display:grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-top: 10px; }
+  .recap-grid .stat-block .value{ font-size: 1.2rem; }
+  .missed-list{ margin-top: 6px; }
+  .missed-item{ padding: 10px 0; border-bottom: 1px solid var(--grid-line-strong); }
+  .missed-item:last-child{ border-bottom: none; }
+  .missed-item .mi-prompt{ font-family: var(--mono); }
+  .missed-item .mi-answer{ font-size: 0.9rem; color: var(--green); margin-top: 4px; }
+
+  footer{ text-align:center; color: var(--ink-mute); font-size: 0.8rem; margin-top: 30px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .levelup{ animation: none; }
+    .level-bar-inner{ transition:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+// =====================================================================
+// LOGIC (generators, scoring, levels) — mirrors /home/claude/logic.js
+// =====================================================================
+function randInt(min, max) { return min + Math.floor(Math.random() * (max - min + 1)); }
+function choice(arr) { return arr[randInt(0, arr.length - 1)]; }
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = randInt(0, i);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function uid() { return Math.random().toString(36).slice(2, 10); }
+
+function buildQcm({ topic, clocks, prompt, correct, pool, explanation }) {
+  const uniquePool = Array.from(new Set(pool)).filter(v => v !== correct);
+  const distractors = shuffle(uniquePool).slice(0, 3);
+  const options = shuffle([correct, ...distractors]);
+  return {
+    id: uid(), topic, clocks, type: 'qcm', prompt,
+    options, correctIndex: options.indexOf(correct), explanation
+  };
+}
+function buildInput({ topic, clocks, prompt, correctAnswer, inputHint, explanation, checker }) {
+  return {
+    id: uid(), topic, clocks, type: 'input', prompt,
+    correctAnswer, inputHint, explanation, checker
+  };
+}
+
+const TRIG_TABLE = {
+  sin: { 0: '0', 30: '1/2', 45: '√2/2', 60: '√3/2', 90: '1' },
+  cos: { 0: '1', 30: '√3/2', 45: '√2/2', 60: '1/2', 90: '0' },
+  tan: { 0: '0', 30: '√3/3', 45: '1', 60: '√3', 90: 'non défini' }
+};
+const ANGLES = [
+  { deg: 0, label: '0' }, { deg: 30, label: 'π/6' }, { deg: 45, label: 'π/4' },
+  { deg: 60, label: 'π/3' }, { deg: 90, label: 'π/2' }
+];
+function genTrigValeur() {
+  const fn = choice(['sin', 'cos', 'tan']);
+  const a = choice(ANGLES);
+  const correct = TRIG_TABLE[fn][a.deg];
+  const pool = Object.values(TRIG_TABLE[fn]);
+  return buildQcm({
+    topic: 'Trigonométrie — valeurs usuelles', clocks: 1,
+    prompt: `${fn}(${a.label}) = ?`,
+    correct, pool,
+    explanation: `Valeur usuelle du cercle trigonométrique : ${fn}(${a.label}) = ${correct}.`
+  });
+}
+
+const TRIG_IDENTITIES = [
+  ['cos(x + 2π)', 'cos x'], ['sin(x + 2π)', 'sin x'],
+  ['cos(x + π)', '-cos x'], ['sin(x + π)', '-sin x'], ['tan(x + π)', 'tan x'],
+  ['cos(-x)', 'cos x'], ['sin(-x)', '-sin x'], ['tan(-x)', '-tan x'],
+  ['cos(π - x)', '-cos x'], ['sin(π - x)', 'sin x'], ['tan(π - x)', '-tan x'],
+  ['cos(π/2 - x)', 'sin x'], ['sin(π/2 - x)', 'cos x'],
+  ['cos(x + π/2)', '-sin x'], ['sin(x + π/2)', 'cos x'],
+  ['cos(x - π/2)', 'sin x'], ['sin(x - π/2)', '-cos x']
+];
+function genTrigIdentite() {
+  const [expr, correct] = choice(TRIG_IDENTITIES);
+  const pool = TRIG_IDENTITIES.map(p => p[1]);
+  return buildQcm({
+    topic: 'Trigonométrie — angles associés', clocks: 1,
+    prompt: `${expr} = ?`,
+    correct, pool,
+    explanation: `Formule des angles associés : ${expr} = ${correct}.`
+  });
+}
+
+const EQ_ANGLES = [{ label: 'π/6' }, { label: 'π/4' }, { label: 'π/3' }, { label: 'π/2' }, { label: '2π/3' }];
+function genTrigEquation() {
+  const fn = choice(['cos', 'sin']);
+  const a = choice(EQ_ANGLES).label;
+  let correct, pool;
+  if (fn === 'cos') {
+    correct = `x = ${a} + 2kπ ou x = -${a} + 2kπ, k∈ℤ`;
+    pool = [correct, `x = ${a} + 2kπ, k∈ℤ`, `x = ${a} + kπ ou x = -${a} + kπ, k∈ℤ`, `x = π - ${a} + 2kπ, k∈ℤ`];
+  } else {
+    correct = `x = ${a} + 2kπ ou x = π - ${a} + 2kπ, k∈ℤ`;
+    pool = [correct, `x = ${a} + 2kπ, k∈ℤ`, `x = ${a} + kπ ou x = -${a} + kπ, k∈ℤ`, `x = -${a} + 2kπ ou x = ${a} + 2kπ, k∈ℤ`];
+  }
+  return buildQcm({
+    topic: "Trigonométrie — résolution d'équations", clocks: 2,
+    prompt: `Résous dans ℝ : ${fn}(x) = ${fn}(${a})`,
+    correct, pool,
+    explanation: `D'après le formulaire : ${correct}`
+  });
+}
+
+const DERIVEES = [
+  ['xⁿ', 'n·xⁿ⁻¹'], ['1/x', '-1/x²'], ['√x', '1/(2√x)'],
+  ['eˣ', 'eˣ'], ['ln x', '1/x'], ['cos x', '-sin x'], ['sin x', 'cos x'],
+  ['tan x', '1 + tan²x'], ['ch x', 'sh x'], ['sh x', 'ch x'], ['th x', '1 - th²x']
+];
+function genDerivee() {
+  const [f, correct] = choice(DERIVEES);
+  const pool = DERIVEES.map(p => p[1]);
+  return buildQcm({
+    topic: 'Analyse — dérivées usuelles', clocks: 1,
+    prompt: `Quelle est la dérivée de f(x) = ${f} ?`,
+    correct, pool,
+    explanation: `D'après le formulaire des dérivées usuelles, la dérivée de ${f} est ${correct}.`
+  });
+}
+
+const EQUIVALENTS = [
+  ['(1+x)ⁿ - 1', 'n·x'], ['1/(1+x) - 1', '-x'], ['√(1+x) - 1', 'x/2'],
+  ['eˣ - 1', 'x'], ['ln(1+x)', 'x'], ['cos(x) - 1', '-x²/2'], ['sin(x)', 'x'],
+  ['tan(x)', 'x'], ['ch(x) - 1', 'x²/2'], ['sh(x)', 'x'], ['arcsin(x)', 'x'], ['arctan(x)', 'x']
+];
+function genEquivalent() {
+  const [f, correct] = choice(EQUIVALENTS);
+  const pool = EQUIVALENTS.map(p => p[1]);
+  return buildQcm({
+    topic: 'Analyse — équivalents en 0', clocks: 2,
+    prompt: `Quel est l'équivalent en 0 de ${f} ?`,
+    correct, pool,
+    explanation: `Au voisinage de 0 : ${f} ∼ ${correct}.`
+  });
+}
+
+const PRIMITIVES = [
+  ['eˣ', 'eˣ + c'], ['cos x', 'sin x + c'], ['sin x', '-cos x + c'],
+  ['1/x', 'ln|x| + c'], ['sh x', 'ch x + c'], ['ch x', 'sh x + c'],
+  ['1/(1+x²)', 'arctan x + c'], ['1/√(1-x²)', 'arcsin x + c']
+];
+function genPrimitive() {
+  const [f, correct] = choice(PRIMITIVES);
+  const pool = PRIMITIVES.map(p => p[1]);
+  return buildQcm({
+    topic: 'Analyse — primitives usuelles', clocks: 1,
+    prompt: `Quelle est une primitive de f(x) = ${f} ?`,
+    correct, pool,
+    explanation: `Une primitive de ${f} est ${correct}.`
+  });
+}
+
+function genPuissance() {
+  const a = choice([2, 3, 5]);
+  const p = randInt(0, a === 2 ? 5 : (a === 3 ? 3 : 2));
+  const q = randInt(0, a === 2 ? 5 : (a === 3 ? 3 : 2));
+  const correct = Math.pow(a, p + q);
+  return buildInput({
+    topic: 'Calcul — puissances', clocks: 1,
+    prompt: `Calcule : ${a}^${p} × ${a}^${q}`,
+    correctAnswer: String(correct), inputHint: 'Nombre entier',
+    explanation: `${a}^${p} × ${a}^${q} = ${a}^(${p}+${q}) = ${a}^${p + q} = ${correct}.`,
+    checker: (val) => Number(val) === correct
+  });
+}
+
+function genRacine() {
+  const k = randInt(2, 6);
+  let m = choice([2, 3, 5, 6, 7]);
+  while (m === k) m = choice([2, 3, 5, 6, 7]);
+  const n = k * k * m;
+  const correct = `${k}√${m}`;
+  const pool = [correct, `${m}√${k}`, `${k * m}√1`, `${k + 1}√${m}`, `${k}√${m + 1}`];
+  return buildQcm({
+    topic: 'Calcul — racines carrées', clocks: 2,
+    prompt: `Simplifie : √${n}`,
+    correct, pool,
+    explanation: `${n} = ${k}²×${m}, donc √${n} = ${k}√${m}.`
+  });
+}
+
+function genSecondDegre() {
+  let r1 = randInt(-6, 6), r2 = randInt(-6, 6);
+  while (r2 === r1) r2 = randInt(-6, 6);
+  const b = -(r1 + r2);
+  const c = r1 * r2;
+  const bTerm = b === 0 ? '' : (b > 0 ? ` + ${b}x` : ` - ${Math.abs(b)}x`);
+  const cTerm = c === 0 ? '' : (c > 0 ? ` + ${c}` : ` - ${Math.abs(c)}`);
+  const sol = [r1, r2].sort((x, y) => x - y);
+  return buildInput({
+    topic: 'Calcul — équations du second degré', clocks: 2,
+    prompt: `Résous : x²${bTerm}${cTerm} = 0`,
+    correctAnswer: `${sol[0]};${sol[1]}`,
+    inputHint: 'Deux solutions séparées par un point-virgule, ex: -2;3',
+    explanation: `Les solutions sont x = ${sol[0]} et x = ${sol[1]}.`,
+    checker: (val) => {
+      const parts = String(val).split(/[;,]/).map(s => Number(s.trim()));
+      if (parts.length !== 2 || parts.some(isNaN)) return false;
+      const got = parts.slice().sort((x, y) => x - y);
+      return got[0] === sol[0] && got[1] === sol[1];
+    }
+  });
+}
+
+function genExpLog() {
+  const variant = choice(['lnExp', 'expLn']);
+  const k = randInt(1, 9);
+  if (variant === 'lnExp') {
+    return buildInput({
+      topic: 'Calcul — exponentielle et logarithme', clocks: 1,
+      prompt: `Simplifie : ln(e^${k})`,
+      correctAnswer: String(k), inputHint: 'Nombre entier',
+      explanation: `ln(e^${k}) = ${k} car ln et exp sont réciproques.`,
+      checker: (val) => Number(val) === k
+    });
+  }
+  return buildInput({
+    topic: 'Calcul — exponentielle et logarithme', clocks: 1,
+    prompt: `Simplifie : e^(ln(${k}))`,
+    correctAnswer: String(k), inputHint: 'Nombre entier',
+    explanation: `e^(ln(${k})) = ${k} car exp et ln sont réciproques.`,
+    checker: (val) => Number(val) === k
+  });
+}
+
+const PYTHA_PAIRS = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [9, 12, 15], [0, 4, 4], [4, 0, 4]];
+function genComplexeModule() {
+  const [a, b, correct] = choice(PYTHA_PAIRS);
+  const sign1 = choice([1, -1]), sign2 = choice([1, -1]);
+  const av = a * sign1, bv = b * sign2;
+  const bTerm = bv >= 0 ? `+ ${bv}i` : `- ${Math.abs(bv)}i`;
+  return buildInput({
+    topic: 'Calcul — nombres complexes', clocks: 2,
+    prompt: `z = ${av} ${bTerm}. Calcule |z|.`,
+    correctAnswer: String(correct), inputHint: 'Nombre entier',
+    explanation: `|z| = √(${av}² + (${bv})²) = √${av * av + bv * bv} = ${correct}.`,
+    checker: (val) => Number(val) === correct
+  });
+}
+
+function genComplexeConjugue() {
+  let a = randInt(-9, 9);
+  if (a === 0) a = choice([-3, -2, -1, 1, 2, 3]);
+  let b = randInt(-9, 9);
+  if (b === 0) b = choice([-3, -2, -1, 1, 2, 3]);
+  const zLabel = `${a} ${b >= 0 ? '+' : '-'} ${Math.abs(b)}i`;
+  const correct = `${a} ${-b >= 0 ? '+' : '-'} ${Math.abs(b)}i`;
+  const pool = [correct, `${-a} ${b >= 0 ? '+' : '-'} ${Math.abs(b)}i`, zLabel, `${-a} ${-b >= 0 ? '+' : '-'} ${Math.abs(b)}i`];
+  return buildQcm({
+    topic: 'Calcul — nombres complexes', clocks: 1,
+    prompt: `Quel est le conjugué de z = ${zLabel} ?`,
+    correct, pool,
+    explanation: `Le conjugué de a + bi est a - bi, donc z̄ = ${correct}.`
+  });
+}
+
+function genSomme() {
+  const variant = choice(['entiers', 'impairs']);
+  const n = randInt(5, 25);
+  if (variant === 'entiers') {
+    const correct = n * (n + 1) / 2;
+    return buildInput({
+      topic: 'Calcul — sommes', clocks: 2,
+      prompt: `Calcule : 1 + 2 + 3 + ... + ${n}`,
+      correctAnswer: String(correct), inputHint: 'Nombre entier',
+      explanation: `Somme des n premiers entiers : n(n+1)/2 = ${n}×${n + 1}/2 = ${correct}.`,
+      checker: (val) => Number(val) === correct
+    });
+  }
+  const correct = n * n;
+  return buildInput({
+    topic: 'Calcul — sommes', clocks: 2,
+    prompt: `Calcule : 1 + 3 + 5 + ... + (2×${n}-1)  (les ${n} premiers impairs)`,
+    correctAnswer: String(correct), inputHint: 'Nombre entier',
+    explanation: `La somme des n premiers impairs vaut n² = ${n}² = ${correct}.`,
+    checker: (val) => Number(val) === correct
+  });
+}
+
+function factorial(n) { let r = 1; for (let i = 2; i <= n; i++) r *= i; return r; }
+function genBinomial() {
+  const n = randInt(4, 10);
+  const k = randInt(0, n);
+  const correct = Math.round(factorial(n) / (factorial(k) * factorial(n - k)));
+  return buildInput({
+    topic: 'Calcul — coefficients binomiaux', clocks: 2,
+    prompt: `Calcule : C(${n}, ${k})   (coefficient binomial "${n} choisir ${k}")`,
+    correctAnswer: String(correct), inputHint: 'Nombre entier',
+    explanation: `C(${n},${k}) = ${n}!/(${k}!×${n - k}!) = ${correct}.`,
+    checker: (val) => Number(val) === correct
+  });
+}
+
+function toSub(n) {
+  const subs = '₀₁₂₃₄₅₆₇₈₉';
+  return String(n).split('').map(d => subs[Number(d)]).join('');
+}
+function genSuite() {
+  const variant = choice(['arithmetique', 'geometrique']);
+  if (variant === 'arithmetique') {
+    const u0 = randInt(-5, 5), r = choice([-4, -3, -2, -1, 1, 2, 3, 4]);
+    const n = randInt(3, 10);
+    const correct = u0 + n * r;
+    return buildInput({
+      topic: 'Calcul — suites numériques', clocks: 2,
+      prompt: `Suite arithmétique : u₀ = ${u0}, raison r = ${r}. Calcule u${toSub(n)} (= u${n}).`,
+      correctAnswer: String(correct), inputHint: 'Nombre entier',
+      explanation: `uₙ = u₀ + n×r = ${u0} + ${n}×${r} = ${correct}.`,
+      checker: (val) => Number(val) === correct
+    });
+  }
+  const u0 = choice([1, 2, 3]);
+  const q = choice([2, 3]);
+  const n = randInt(2, 5);
+  const correct = u0 * Math.pow(q, n);
+  return buildInput({
+    topic: 'Calcul — suites numériques', clocks: 2,
+    prompt: `Suite géométrique : u₀ = ${u0}, raison q = ${q}. Calcule u${toSub(n)} (= u${n}).`,
+    correctAnswer: String(correct), inputHint: 'Nombre entier',
+    explanation: `uₙ = u₀ × qⁿ = ${u0} × ${q}^${n} = ${correct}.`,
+    checker: (val) => Number(val) === correct
+  });
+}
+
+const DL_POOL = [
+  { f: 'eˣ', order: 2, coeff: '1/2' }, { f: 'cos x', order: 2, coeff: '-1/2' },
+  { f: 'ln(1+x)', order: 2, coeff: '-1/2' }, { f: '1/(1-x)', order: 2, coeff: '1' },
+  { f: 'sin x', order: 3, coeff: '-1/6' }, { f: 'ch x', order: 2, coeff: '1/2' }
+];
+const DL_DISTRACTORS = ['1/2', '-1/2', '1', '-1', '1/6', '-1/6', '1/3', '2'];
+function genDL() {
+  const q = choice(DL_POOL);
+  return buildQcm({
+    topic: 'Analyse — développements limités', clocks: 3,
+    prompt: `Dans le DL de f(x) = ${q.f} en 0 (à l'ordre ${q.order}), quel est le coefficient de x^${q.order} ?`,
+    correct: q.coeff, pool: DL_DISTRACTORS,
+    explanation: `Le DSE de ${q.f} donne un coefficient ${q.coeff} devant x^${q.order}.`
+  });
+}
+
+const LITTERAL_POOL = [
+  ['(a + b)²', 'a² + 2ab + b²'], ['(a - b)²', 'a² - 2ab + b²'],
+  ['(a + b)(a - b)', 'a² - b²'], ['a² - b²', '(a - b)(a + b)'],
+  ['(a + b)³', 'a³ + 3a²b + 3ab² + b³']
+];
+function genLitteral() {
+  const [expr, correct] = choice(LITTERAL_POOL);
+  const pool = [correct, 'a² + b²', 'a² + ab + b²', '2a² + 2b²', 'a³ + b³', 'a² - 2ab - b²'];
+  return buildQcm({
+    topic: 'Calcul — calcul littéral', clocks: 1,
+    prompt: `Développe ou factorise : ${expr}`,
+    correct, pool,
+    explanation: `Identité remarquable : ${expr} = ${correct}.`
+  });
+}
+
+const GENERATORS = [
+  genTrigValeur, genTrigIdentite, genTrigEquation,
+  genDerivee, genEquivalent, genPrimitive,
+  genPuissance, genRacine, genSecondDegre, genExpLog,
+  genComplexeModule, genComplexeConjugue, genSomme, genBinomial,
+  genSuite, genDL, genLitteral
+];
+
+function buildSession(total) {
+  const questions = [];
+  while (questions.length < total) {
+    const batch = shuffle(GENERATORS);
+    for (const g of batch) {
+      if (questions.length >= total) break;
+      questions.push(g());
+    }
+  }
+  return shuffle(questions).slice(0, total);
+}
+
+const LEVELS = [
+  { min: 0, name: 'Débutant' },
+  { min: 1500, name: 'Apprenti calculateur' },
+  { min: 4000, name: 'Calculateur confirmé' },
+  { min: 8000, name: 'Technicien de fiche' },
+  { min: 14000, name: 'Expert du cahier' },
+  { min: 22000, name: 'Maître calculateur ATS' }
+];
+function levelInfo(xp) {
+  let idx = 0;
+  for (let i = 0; i < LEVELS.length; i++) if (xp >= LEVELS[i].min) idx = i;
+  const current = LEVELS[idx];
+  const next = LEVELS[idx + 1] || null;
+  const progress = next ? (xp - current.min) / (next.min - current.min) : 1;
+  return { name: current.name, index: idx, next, progress: Math.max(0, Math.min(1, progress)) };
+}
+
+// =====================================================================
+// SCORING
+// =====================================================================
+const QCM_TIME = 18;    // seconds
+const INPUT_TIME = 25;  // seconds
+const QCM_WRONG_PENALTY = -15;
+const INPUT_WRONG_PENALTY = -8;
+
+function pointsFor(q, correct, remaining, maxTime, streak) {
+  if (!correct) return q.type === 'qcm' ? QCM_WRONG_PENALTY : INPUT_WRONG_PENALTY;
+  let pts = 60 + Math.round(40 * (remaining / maxTime));
+  if (streak >= 3) pts += 10;
+  return pts;
+}
+
+// =====================================================================
+// STORAGE — Google Sheet via Apps Script Web App
+// =====================================================================
+const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbycyLSqjch8ME_hgEt8x90yZtjp_ZLpFTFoeGjTg_f_hHxlz7JzI2slTsUznjq589aS/exec';
+let storageWarning = null;
+
+// Reads every logged session from the sheet and rebuilds { xp, sessions }
+// by replaying the sessions in order, so the level shown for each row is
+// the level the player actually had at that point in time.
+async function loadProgress() {
+  try {
+    const res = await fetch(SHEET_API_URL, { method: 'GET' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    let xp = 0;
+    const sessions = rows.map(r => {
+      const xpGain = Number(r.xpGain) || 0;
+      xp += xpGain;
+      return {
+        date: r.date,
+        score: Number(r.score) || 0,
+        accuracy: Number(r.accuracy) || 0,
+        avgTime: Number(r.avgTime) || 0,
+        xpGain,
+        level: levelInfo(xp).name
+      };
+    });
+    return { xp, sessions };
+  } catch (e) {
+    console.error('Impossible de charger le carnet depuis Google Sheets', e);
+    storageWarning = "Le carnet n'a pas pu être chargé depuis Google Sheets (vérifie la connexion ou l'URL du script). Cette partie ne sera pas sauvegardée.";
+    return { xp: 0, sessions: [] };
+  }
+}
+
+// Appends a single session row to the sheet. Content-Type is deliberately
+// 'text/plain' (not 'application/json') so the browser sends this as a
+// simple request and skips the CORS preflight, which Apps Script doesn't
+// handle — this is the standard trick for calling Apps Script from a
+// static site like GitHub Pages.
+async function saveSessionRow(record) {
+  try {
+    await fetch(SHEET_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(record)
+    });
+  } catch (e) {
+    console.error('Erreur de sauvegarde vers Google Sheets', e);
+    storageWarning = "Ce score n'a pas pu être envoyé à Google Sheets. Il restera visible tant que tu ne recharges pas la page.";
+  }
+}
+
+// =====================================================================
+// APP STATE / RENDER
+// =====================================================================
+const root = document.getElementById('app');
+let state = { screen: 'loading', progress: null };
+let session = null; // {questions, index, results, streak, score, startedAt}
+let timerHandle = null;
+let timeLeft = 0;
+let maxTimeCurrent = 0;
+let answered = false;
+
+function esc(s){ return String(s); }
+
+async function init() {
+  state.progress = await loadProgress();
+  state.screen = 'home';
+  render();
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' }) +
+    ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderHome() {
+  const { xp, sessions } = state.progress;
+  const info = levelInfo(xp);
+  const last10 = sessions.slice(-10).reverse();
+  const bestScore = sessions.length ? Math.max(...sessions.map(s => s.score)) : 0;
+
+  let barsHtml = '';
+  if (sessions.length) {
+    const recent = sessions.slice(-12);
+    const maxS = Math.max(...recent.map(s => Math.max(s.score, 1)));
+    barsHtml = `<div class="bars">` + recent.map(s => {
+      const h = Math.max(6, Math.round((s.score / maxS) * 60));
+      const isBest = s.score === bestScore;
+      return `<div class="bar ${isBest ? 'best' : ''}" style="height:${h}px" title="Score ${s.score}"></div>`;
+    }).join('') + `</div>`;
+  }
+
+  let tableHtml = '';
+  if (last10.length) {
+    tableHtml = `
+      <table>
+        <thead><tr><th>#</th><th>Date</th><th>Score</th><th>Précision</th><th>Temps moy.</th><th>Niveau</th></tr></thead>
+        <tbody>
+          ${last10.map((s, i) => `
+            <tr>
+              <td>${sessions.length - i}</td>
+              <td>${fmtDate(s.date)}</td>
+              <td>${s.score}</td>
+              <td>${s.accuracy}%</td>
+              <td>${s.avgTime}s</td>
+              <td class="level-cell">${s.level}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      ${barsHtml}
+      <div class="btn-row">
+        <button id="copy-sheets-btn">Copier pour Google Sheets</button>
+        <button id="export-csv-btn">Télécharger en .csv</button>
+      </div>
+      <div class="input-hint" id="copy-note"></div>
+    `;
+  } else {
+    tableHtml = storageWarning
+      ? `<p class="empty-note">${esc(storageWarning)}</p>`
+      : `<p class="empty-note">Aucune partie enregistrée pour l'instant. Lance ta première fiche de 40 questions pour commencer ton carnet de progression.</p>`;
+  }
+
+  root.innerHTML = `
+    <div class="masthead">
+      <h1>Cahier de calcul</h1>
+      <p>Entraînement chronométré sur la trigonométrie circulaire, le formulaire d'analyse et les fiches de calcul — d'après le formulaire ATS, Lycée Diderot.</p>
+    </div>
+
+    <div class="card">
+      <div class="stat-row">
+        <div class="stat-block">
+          <div class="label">Niveau</div>
+          <div class="value">${info.name}</div>
+        </div>
+        <div class="stat-block">
+          <div class="label">XP cumulée</div>
+          <div class="value">${xp}</div>
+        </div>
+        <div class="stat-block">
+          <div class="label">Parties jouées</div>
+          <div class="value">${sessions.length}</div>
+        </div>
+        <div class="stat-block">
+          <div class="label">Meilleur score</div>
+          <div class="value">${bestScore}</div>
+        </div>
+      </div>
+      <div class="level-bar-outer"><div class="level-bar-inner" style="width:${Math.round(info.progress * 100)}%"></div></div>
+      <div class="level-caption">${info.next ? `${xp} / ${info.next.min} XP avant « ${info.next.name} »` : 'Niveau maximum atteint — tu es Maître calculateur ATS.'}</div>
+      <div class="btn-row">
+        <button class="primary" id="start-btn">Nouvelle partie — 40 questions</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Mon carnet de progression</h2>
+      ${tableHtml}
+    </div>
+
+    <footer>D'après le formulaire de trigonométrie circulaire (J.-L. Rouget), le formulaire d'analyse ATS (Lycée Diderot) et le Cahier de calcul.</footer>
+  `;
+  document.getElementById('start-btn').addEventListener('click', startSession);
+  const copyBtn = document.getElementById('copy-sheets-btn');
+  const csvBtn = document.getElementById('export-csv-btn');
+  if (copyBtn) copyBtn.addEventListener('click', copyForSheets);
+  if (csvBtn) csvBtn.addEventListener('click', downloadCsv);
+}
+
+function sessionRows() {
+  const headers = ['#', 'Date', 'Score', 'Precision (%)', 'Temps moyen (s)', 'Niveau', 'XP gagnee'];
+  const sessions = state.progress.sessions;
+  const rows = sessions.map((s, i) => [
+    i + 1,
+    new Date(s.date).toLocaleString('fr-FR'),
+    s.score,
+    s.accuracy,
+    s.avgTime,
+    s.level,
+    s.xpGain != null ? s.xpGain : ''
+  ]);
+  return { headers, rows };
+}
+
+async function copyForSheets() {
+  const { headers, rows } = sessionRows();
+  const tsv = [headers, ...rows].map(r => r.join('\t')).join('\n');
+  const note = document.getElementById('copy-note');
+  try {
+    await navigator.clipboard.writeText(tsv);
+    if (note) note.textContent = 'Tableau copié — colle-le (Ctrl+V) dans une feuille Google Sheets.';
+  } catch (e) {
+    if (note) note.textContent = "Impossible de copier automatiquement : sélectionne et copie le tableau ci-dessus à la main.";
+  }
+}
+
+function downloadCsv() {
+  const { headers, rows } = sessionRows();
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'cahier-de-calcul-progression.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function startSession() {
+  session = {
+    questions: buildSession(40),
+    index: 0,
+    results: [],
+    streak: 0,
+    score: 0
+  };
+  state.screen = 'quiz';
+  renderQuestion();
+}
+
+function renderProgressStrip() {
+  const cells = session.questions.map((q, i) => {
+    let cls = '';
+    if (i < session.results.length) cls = session.results[i].correct ? 'correct' : 'wrong';
+    else if (i === session.index) cls = 'current';
+    return `<div class="cell ${cls}"></div>`;
+  }).join('');
+  return `<div class="progress-strip">${cells}</div>`;
+}
+
+function renderQuestion() {
+  clearInterval(timerHandle);
+  answered = false;
+  const q = session.questions[session.index];
+  maxTimeCurrent = q.type === 'qcm' ? QCM_TIME : INPUT_TIME;
+  timeLeft = maxTimeCurrent;
+
+  const clocksStr = '⏱'.repeat(q.clocks);
+
+  let bodyHtml = '';
+  if (q.type === 'qcm') {
+    bodyHtml = `<div class="options">` + q.options.map((opt, i) =>
+      `<button class="option" data-idx="${i}">${esc(opt)}</button>`
+    ).join('') + `</div>`;
+  } else {
+    bodyHtml = `
+      <div class="input-row">
+        <input type="text" id="answer-input" autocomplete="off" placeholder="Ta réponse">
+        <button class="primary" id="submit-btn">Valider</button>
+      </div>
+      <div class="input-hint">${esc(q.inputHint || '')}</div>
+    `;
+  }
+
+  root.innerHTML = `
+    <div class="quiz-top">
+      <div class="quiz-meta">Question ${session.index + 1} / ${session.questions.length} — Score : <strong>${Math.max(session.score,0)}</strong></div>
+      <div class="timer" id="timer">${timeLeft}</div>
+    </div>
+    ${renderProgressStrip()}
+    <div class="card question-card">
+      <span class="q-topic">${esc(q.topic)}</span>
+      <span class="q-clocks">${clocksStr}</span>
+      <div class="q-prompt">${esc(q.prompt)}</div>
+      <div id="q-body">${bodyHtml}</div>
+      <div id="feedback-slot"></div>
+    </div>
+  `;
+
+  if (q.type === 'qcm') {
+    root.querySelectorAll('.option').forEach(btn => {
+      btn.addEventListener('click', () => submitQcm(Number(btn.dataset.idx)));
+    });
+  } else {
+    const input = document.getElementById('answer-input');
+    input.focus();
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitInput(); });
+    document.getElementById('submit-btn').addEventListener('click', submitInput);
+  }
+
+  timerHandle = setInterval(() => {
+    timeLeft -= 1;
+    const t = document.getElementById('timer');
+    if (t) {
+      t.textContent = timeLeft;
+      t.classList.toggle('warn', timeLeft <= 5);
+    }
+    if (timeLeft <= 0) {
+      clearInterval(timerHandle);
+      if (!answered) {
+        if (q.type === 'qcm') submitQcm(-1);
+        else submitInput(true);
+      }
+    }
+  }, 1000);
+}
+
+function finalizeAnswer(q, correct) {
+  answered = true;
+  clearInterval(timerHandle);
+  const remaining = Math.max(0, timeLeft);
+  session.streak = correct ? session.streak + 1 : 0;
+  const pts = pointsFor(q, correct, remaining, maxTimeCurrent, session.streak);
+  session.score += pts;
+  session.results.push({
+    topic: q.topic, correct, points: pts,
+    timeTaken: maxTimeCurrent - remaining,
+    prompt: q.prompt,
+    correctLabel: q.type === 'qcm' ? q.options[q.correctIndex] : q.correctAnswer
+  });
+
+  const slot = document.getElementById('feedback-slot');
+  if (slot) {
+    slot.innerHTML = `
+      <div class="feedback ${correct ? 'ok' : 'ko'}">
+        ${correct ? 'Correct.' : `Faux — réponse attendue : ${esc(q.type === 'qcm' ? q.options[q.correctIndex] : q.correctAnswer)}.`}
+        <span class="pts">${pts >= 0 ? '+' : ''}${pts} pts</span><br>
+        <span style="color:var(--ink-mute)">${esc(q.explanation)}</span>
+      </div>
+    `;
+  }
+
+  setTimeout(() => {
+    session.index += 1;
+    if (session.index >= session.questions.length) endSession();
+    else renderQuestion();
+  }, correct ? 1100 : 2200);
+}
+
+function submitQcm(idx) {
+  if (answered) return;
+  const q = session.questions[session.index];
+  const correct = idx === q.correctIndex;
+  document.querySelectorAll('.option').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correctIndex) btn.classList.add(idx === -1 || !correct ? 'reveal-correct' : 'selected-correct');
+    if (i === idx && !correct) btn.classList.add('selected-wrong');
+  });
+  finalizeAnswer(q, correct);
+}
+
+function submitInput(timedOut) {
+  if (answered) return;
+  const q = session.questions[session.index];
+  const input = document.getElementById('answer-input');
+  const val = timedOut ? '' : (input ? input.value.trim() : '');
+  if (input) input.disabled = true;
+  const btn = document.getElementById('submit-btn');
+  if (btn) btn.disabled = true;
+  const correct = !timedOut && val !== '' && q.checker(val);
+  finalizeAnswer(q, correct);
+}
+
+async function endSession() {
+  clearInterval(timerHandle);
+  const total = session.questions.length;
+  const correctCount = session.results.filter(r => r.correct).length;
+  const accuracy = Math.round((correctCount / total) * 100);
+  const avgTime = Math.round(session.results.reduce((s, r) => s + r.timeTaken, 0) / total);
+  const finalScore = Math.max(0, session.score);
+  const xpGain = session.results.reduce((s, r) => s + Math.max(0, r.points), 0);
+
+  const oldXp = state.progress.xp;
+  const oldLevel = levelInfo(oldXp);
+  const newXp = oldXp + xpGain;
+  const newLevel = levelInfo(newXp);
+  const leveledUp = newLevel.index > oldLevel.index;
+
+  const record = {
+    date: new Date().toISOString(),
+    score: finalScore,
+    accuracy, avgTime,
+    xpGain
+  };
+  state.progress.xp = newXp;
+  state.progress.sessions.push({ ...record, level: newLevel.name });
+  storageWarning = null;
+  await saveSessionRow(record);
+
+  const missed = session.results.filter(r => !r.correct);
+
+  root.innerHTML = `
+    <div class="masthead">
+      <h1>Fiche corrigée</h1>
+      <p>Partie de ${total} questions terminée.</p>
+    </div>
+
+    <div class="card score-hero">
+      <div class="big">${finalScore}</div>
+      <div class="sub">points — précision ${accuracy}% — ${avgTime}s en moyenne par question</div>
+      ${leveledUp ? `<div class="levelup">Niveau supérieur : ${newLevel.name}</div>` : ''}
+      ${storageWarning ? `<div class="feedback ko" style="text-align:left; margin-top:16px;">${esc(storageWarning)}</div>` : ''}
+      <div class="recap-grid">
+        <div class="stat-block"><div class="label">Bonnes réponses</div><div class="value">${correctCount}/${total}</div></div>
+        <div class="stat-block"><div class="label">XP gagnée</div><div class="value">+${xpGain}</div></div>
+        <div class="stat-block"><div class="label">XP totale</div><div class="value">${newXp}</div></div>
+      </div>
+      <div class="btn-row" style="justify-content:center; margin-top:20px;">
+        <button class="primary" id="replay-btn">Rejouer — nouvelle partie</button>
+        <button id="home-btn">Retour à l'accueil</button>
+      </div>
+    </div>
+
+    ${missed.length ? `
+      <div class="card">
+        <h2>À revoir (${missed.length})</h2>
+        <div class="missed-list">
+          ${missed.map(m => `
+            <div class="missed-item">
+              <div class="mi-prompt">${esc(m.prompt)}</div>
+              <div class="mi-answer">Réponse : ${esc(m.correctLabel)} — ${esc(m.topic)}</div>
+            </div>`).join('')}
+        </div>
+      </div>` : ''}
+  `;
+  document.getElementById('replay-btn').addEventListener('click', startSession);
+  document.getElementById('home-btn').addEventListener('click', () => { state.screen = 'home'; render(); });
+}
+
+function render() {
+  if (state.screen === 'home') renderHome();
+}
+
+init();
+</script>
+</body>
+</html>
